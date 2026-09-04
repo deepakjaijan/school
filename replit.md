@@ -1,6 +1,6 @@
-# [Project name]
+# Vikas Shiksha Sadan School Management
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+An admin-first school operations portal for Vikas Shiksha Sadan Senior Secondary School.
 
 ## Run & Operate
 
@@ -22,23 +22,28 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/vikas-school-portal/src/App.tsx` — responsive React application shell and route-level experiences.
+- `artifacts/vikas-school-portal/src/index.css` — school-office visual language, typography, and motion tokens.
+- `artifacts/api-server/src/routes/school.ts` — school API routes with seeded development data and CRUD mutations.
+- `lib/api-spec/openapi.yaml` — source of truth for generated API hooks and validation schemas.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- The first build uses the existing shared Express API service so the portal is runnable inside the workspace's managed preview.
+- API contracts are defined in OpenAPI first and generated into the shared React client and Zod validation packages.
+- The frontend is organized as an admin-first operations hub with route-level modules for students, teachers, academics, calendar, and notices.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+The portal provides a dashboard, student records with search/add/remove actions, teacher contacts and specializations, academic resources and online lectures, a school calendar for holidays/occasions/sports, and a publishable notice board.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+The requested product name is Vikas Shiksha Sadan Senior Secondary School.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Numeric OpenAPI fields use `type: number` for compatibility with the workspace's current Zod runtime; regenerating integer schemas produces unsupported `z.int()` calls here.
 
 ## Pointers
 

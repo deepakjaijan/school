@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Vikas Shiksha Sadan School Management"
+description = "A polished school management portal for Vikas Shiksha Sadan Senior Secondary School, with student records, teacher directory, academic resources, online lectures, notices, calendar events, and sports updates."
+version = "1.0.0"
+id = "artifacts/vikas-school-portal"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24797
+
+[services.development]
+run = "pnpm --filter @workspace/vikas-school-portal run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/vikas-school-portal", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/vikas-school-portal/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24797"
+BASE_PATH = "/"

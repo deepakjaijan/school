@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: school
+    description: School management operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,172 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [school]
+      summary: Get school dashboard summary
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+  /students:
+    get:
+      operationId: listStudents
+      tags: [school]
+      summary: List students
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema: { type: string }
+        - name: className
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: Students
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Student" }
+    post:
+      operationId: createStudent
+      tags: [school]
+      summary: Add a student
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StudentInput" }
+      responses:
+        "201":
+          description: Created student
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Student" }
+  /students/{id}:
+    delete:
+      operationId: deleteStudent
+      tags: [school]
+      summary: Remove a student
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: number }
+      responses:
+        "204": { description: Student removed }
+        "404": { description: Student not found }
+  /teachers:
+    get:
+      operationId: listTeachers
+      tags: [school]
+      summary: List teachers
+      responses:
+        "200":
+          description: Teachers
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Teacher" }
+  /resources:
+    get:
+      operationId: listResources
+      tags: [school]
+      summary: List academic resources
+      parameters:
+        - name: kind
+          in: query
+          required: false
+          schema: { type: string }
+        - name: className
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: Academic resources
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Resource" }
+  /notices:
+    get:
+      operationId: listNotices
+      tags: [school]
+      summary: List school notices
+      responses:
+        "200":
+          description: Notices
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Notice" }
+    post:
+      operationId: createNotice
+      tags: [school]
+      summary: Publish a notice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NoticeInput" }
+      responses:
+        "201":
+          description: Created notice
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Notice" }
+  /events:
+    get:
+      operationId: listEvents
+      tags: [school]
+      summary: List calendar and school events
+      responses:
+        "200":
+          description: Events
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SchoolEvent" }
+    post:
+      operationId: createEvent
+      tags: [school]
+      summary: Add a calendar or sports event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EventInput" }
+      responses:
+        "201":
+          description: Created event
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SchoolEvent" }
+  /lectures:
+    get:
+      operationId: listLectures
+      tags: [school]
+      summary: List online lectures
+      responses:
+        "200":
+          description: Online lectures
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Lecture" }
 components:
   schemas:
     HealthStatus:
@@ -33,4 +201,125 @@ components:
           type: string
       required:
         - status
+    Dashboard:
+      type: object
+      required: [studentCount, teacherCount, attendance, upcomingExams, recentActivity]
+      properties:
+        studentCount: { type: number }
+        teacherCount: { type: number }
+        attendance: { type: number }
+        upcomingExams: { type: number }
+        recentActivity:
+          type: array
+          items: { $ref: "#/components/schemas/Activity" }
+    Activity:
+      type: object
+      required: [id, title, detail, time, tone]
+      properties:
+        id: { type: number }
+        title: { type: string }
+        detail: { type: string }
+        time: { type: string }
+        tone: { type: string }
+    Student:
+      type: object
+      required: [id, name, admissionNumber, className, section, rollNumber, attendance, averageScore, achievementCount, parentContact]
+      properties:
+        id: { type: number }
+        name: { type: string }
+        admissionNumber: { type: string }
+        className: { type: string }
+        section: { type: string }
+        rollNumber: { type: number }
+        attendance: { type: number }
+        averageScore: { type: number }
+        achievementCount: { type: number }
+        parentContact: { type: string }
+        avatar: { type: string }
+    StudentInput:
+      type: object
+      required: [name, admissionNumber, className, section, rollNumber, parentContact]
+      properties:
+        name: { type: string, minLength: 1 }
+        admissionNumber: { type: string, minLength: 1 }
+        className: { type: string }
+        section: { type: string }
+        rollNumber: { type: number }
+        parentContact: { type: string }
+    Teacher:
+      type: object
+      required: [id, name, subject, specialization, email, phone, experience, initials, color]
+      properties:
+        id: { type: number }
+        name: { type: string }
+        subject: { type: string }
+        specialization: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        experience: { type: string }
+        initials: { type: string }
+        color: { type: string }
+    Resource:
+      type: object
+      required: [id, title, kind, subject, className, year, pages, downloads]
+      properties:
+        id: { type: number }
+        title: { type: string }
+        kind: { type: string }
+        subject: { type: string }
+        className: { type: string }
+        year: { type: number }
+        pages: { type: number }
+        downloads: { type: number }
+    Notice:
+      type: object
+      required: [id, title, body, category, publishedAt, author, pinned]
+      properties:
+        id: { type: number }
+        title: { type: string }
+        body: { type: string }
+        category: { type: string }
+        publishedAt: { type: string }
+        author: { type: string }
+        pinned: { type: boolean }
+    NoticeInput:
+      type: object
+      required: [title, body, category]
+      properties:
+        title: { type: string, minLength: 1 }
+        body: { type: string, minLength: 1 }
+        category: { type: string }
+        pinned: { type: boolean }
+    SchoolEvent:
+      type: object
+      required: [id, title, date, type, description, color]
+      properties:
+        id: { type: number }
+        title: { type: string }
+        date: { type: string }
+        type: { type: string }
+        description: { type: string }
+        color: { type: string }
+    EventInput:
+      type: object
+      required: [title, date, type, description]
+      properties:
+        title: { type: string, minLength: 1 }
+        date: { type: string }
+        type: { type: string }
+        description: { type: string }
+        color: { type: string }
+    Lecture:
+      type: object
+      required: [id, title, teacher, subject, className, duration, scheduledAt, status, meetingUrl]
+      properties:
+        id: { type: number }
+        title: { type: string }
+        teacher: { type: string }
+        subject: { type: string }
+        className: { type: string }
+        duration: { type: string }
+        scheduledAt: { type: string }
+        status: { type: string }
+        meetingUrl: { type: string }
 

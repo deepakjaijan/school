@@ -1,0 +1,1 @@
+- [OpenAPI numeric compatibility](openapi-numeric-compatibility.md) — use number schemas for numeric fields because this workspace's current Zod runtime lacks z.int().
