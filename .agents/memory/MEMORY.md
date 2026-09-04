@@ -1,1 +1,2 @@
 - [OpenAPI numeric compatibility](openapi-numeric-compatibility.md) — use number schemas for numeric fields because this workspace's current Zod runtime lacks z.int().
+- [Auth privacy model](auth-privacy.md) — students see only their own profile; principal accounts can see and manage private contacts.

@@ -15,6 +15,7 @@ export * from './listResourcesParams';
 export * from './listStudentsParams';
 export * from './notice';
 export * from './noticeInput';
+export * from './profile';
 export * from './resource';
 export * from './schoolEvent';
 export * from './student';

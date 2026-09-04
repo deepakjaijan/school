@@ -32,10 +32,11 @@ An admin-first school operations portal for Vikas Shiksha Sadan Senior Secondary
 - The first build uses the existing shared Express API service so the portal is runnable inside the workspace's managed preview.
 - API contracts are defined in OpenAPI first and generated into the shared React client and Zod validation packages.
 - The frontend is organized as an admin-first operations hub with route-level modules for students, teachers, academics, calendar, and notices.
+- Clerk provides sign-in/sign-up; API access is role-aware, with student accounts restricted to their own profile and principal accounts able to manage the full register.
 
 ## Product
 
-The portal provides a dashboard, student records with search/add/remove actions, teacher contacts and specializations, academic resources and online lectures, a school calendar for holidays/occasions/sports, and a publishable notice board.
+The portal provides a dashboard, student records with Nursery–XII class filters and class totals, teacher contacts and specializations, academic resources and online lectures, a school calendar for holidays/occasions/sports, and a publishable notice board. Student accounts have protected self-service profiles; principal accounts can add/remove students and see private contacts.
 
 ## User preferences
 

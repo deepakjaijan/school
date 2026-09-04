@@ -16,6 +16,13 @@ export interface Student {
   attendance: number;
   averageScore: number;
   achievementCount: number;
-  parentContact: string;
+  /** @nullable */
+  parentContact: string | null;
+  /** @nullable */
+  studentContact: string | null;
+  /** @nullable */
+  address: string | null;
+  /** @nullable */
+  email: string | null;
   avatar?: string;
 }

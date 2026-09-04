@@ -35,7 +35,14 @@ export interface Student {
   attendance: number;
   averageScore: number;
   achievementCount: number;
-  parentContact: string;
+  /** @nullable */
+  parentContact: string | null;
+  /** @nullable */
+  studentContact: string | null;
+  /** @nullable */
+  address: string | null;
+  /** @nullable */
+  email: string | null;
   avatar?: string;
 }
 
@@ -48,6 +55,18 @@ export interface StudentInput {
   section: string;
   rollNumber: number;
   parentContact: string;
+  studentContact: string;
+  address: string;
+  email: string;
+}
+
+export interface Profile {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  /** @nullable */
+  studentId: number | null;
 }
 
 export interface Teacher {

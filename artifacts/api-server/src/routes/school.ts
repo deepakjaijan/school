@@ -1,4 +1,5 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
+import { getAuth } from "@clerk/express";
 import {
   CreateEventBody,
   CreateNoticeBody,
@@ -25,8 +26,19 @@ type Student = {
   attendance: number;
   averageScore: number;
   achievementCount: number;
-  parentContact: string;
+  parentContact: string | null;
+  studentContact: string | null;
+  address: string | null;
+  email: string | null;
   avatar: string;
+};
+
+type Viewer = {
+  role: "principal" | "student";
+  studentId: number | null;
+  id: string;
+  name: string;
+  email: string;
 };
 
 type Notice = {
@@ -60,6 +72,9 @@ const students: Student[] = [
     averageScore: 91,
     achievementCount: 4,
     parentContact: "+91 98765 43210",
+    studentContact: "+91 98111 00221",
+    address: "Model Town, Rohtak",
+    email: "aarav.sharma@student.vikasshiksha.edu.in",
     avatar: "AS",
   },
   {
@@ -73,6 +88,9 @@ const students: Student[] = [
     averageScore: 88,
     achievementCount: 3,
     parentContact: "+91 98110 22448",
+    studentContact: "+91 98990 12009",
+    address: "Civil Lines, Rohtak",
+    email: "ananya.verma@student.vikasshiksha.edu.in",
     avatar: "AV",
   },
   {
@@ -86,6 +104,9 @@ const students: Student[] = [
     averageScore: 84,
     achievementCount: 5,
     parentContact: "+91 99887 61234",
+    studentContact: "+91 98722 44556",
+    address: "Sector 3, Rohtak",
+    email: "kabir.singh@student.vikasshiksha.edu.in",
     avatar: "KS",
   },
   {
@@ -99,6 +120,9 @@ const students: Student[] = [
     averageScore: 94,
     achievementCount: 6,
     parentContact: "+91 98990 12345",
+    studentContact: "+91 98120 77889",
+    address: "D Model Town, Rohtak",
+    email: "ishita.mehra@student.vikasshiksha.edu.in",
     avatar: "IM",
   },
   {
@@ -112,6 +136,9 @@ const students: Student[] = [
     averageScore: 86,
     achievementCount: 2,
     parentContact: "+91 98220 33881",
+    studentContact: "+91 98999 12001",
+    address: "Ashoka Road, Rohtak",
+    email: "rohan.gupta@student.vikasshiksha.edu.in",
     avatar: "RG",
   },
 ];
@@ -192,6 +219,64 @@ const events: SchoolEvent[] = [
 
 const router: IRouter = Router();
 
+function getViewer(req: Request): Viewer {
+  const auth = getAuth(req);
+  const claims = ("sessionClaims" in auth ? auth.sessionClaims : undefined) as
+    | {
+        sub?: string;
+        email?: string;
+        name?: string;
+        publicMetadata?: { role?: string; studentId?: number };
+        metadata?: { role?: string; studentId?: number };
+      }
+    | undefined;
+  const role =
+    claims?.publicMetadata?.role === "principal" ||
+    claims?.metadata?.role === "principal" ||
+    claims?.email?.endsWith("@vikasshiksha.edu.in")
+      ? "principal"
+      : "student";
+  return {
+    role,
+    studentId: role === "student" ? claims?.publicMetadata?.studentId ?? 1 : null,
+    id: claims?.sub ?? "signed-in-user",
+    name: claims?.name ?? (role === "principal" ? "School Principal" : "Student"),
+    email: claims?.email ?? "account@vikasshiksha.edu.in",
+  };
+}
+
+function requireSignedIn(req: Request, res: Response): Viewer | null {
+  const viewer = getViewer(req);
+  if (!viewer.id || viewer.id === "signed-in-user") {
+    res.status(401).json({ error: "Authentication required" });
+    return null;
+  }
+  return viewer;
+}
+
+function visibleStudent(student: Student, viewer: Viewer): Student {
+  if (viewer.role === "principal" || viewer.studentId === student.id) return student;
+  return {
+    ...student,
+    parentContact: null,
+    studentContact: null,
+    address: null,
+    email: null,
+  };
+}
+
+router.get("/profile", (req, res) => {
+  const viewer = requireSignedIn(req, res);
+  if (!viewer) return;
+  res.json({
+    id: viewer.id,
+    name: viewer.name,
+    email: viewer.email,
+    role: viewer.role,
+    studentId: viewer.studentId,
+  });
+});
+
 router.get("/dashboard", (_req, res) => {
   res.json(GetDashboardResponse.parse({
     studentCount: students.length + 1214,
@@ -208,6 +293,8 @@ router.get("/dashboard", (_req, res) => {
 });
 
 router.get("/students", (req, res) => {
+  const viewer = requireSignedIn(req, res);
+  if (!viewer) return;
   const parsed = ListStudentsQueryParams.safeParse(req.query);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -215,14 +302,22 @@ router.get("/students", (req, res) => {
   }
   const search = parsed.data.search?.toLowerCase();
   const className = parsed.data.className;
-  const filtered = students.filter((student) =>
+  const accessibleStudents = viewer.role === "principal"
+    ? students
+    : students.filter((student) => student.id === viewer.studentId);
+  const filtered = accessibleStudents.filter((student) =>
     (!search || [student.name, student.admissionNumber, student.className].some((value) => value.toLowerCase().includes(search))) &&
     (!className || student.className === className),
   );
-  res.json(ListStudentsResponse.parse(filtered));
+  res.json(ListStudentsResponse.parse(filtered.map((student) => visibleStudent(student, viewer))));
 });
 
 router.post("/students", (req, res) => {
+  const viewer = requireSignedIn(req, res);
+  if (!viewer || viewer.role !== "principal") {
+    if (viewer) res.status(403).json({ error: "Only the principal can add students" });
+    return;
+  }
   const parsed = CreateStudentBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -234,6 +329,9 @@ router.post("/students", (req, res) => {
     attendance: 100,
     averageScore: 0,
     achievementCount: 0,
+    studentContact: parsed.data.studentContact,
+    address: parsed.data.address,
+    email: parsed.data.email,
     avatar: parsed.data.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase(),
   };
   students.unshift(student);
@@ -241,6 +339,11 @@ router.post("/students", (req, res) => {
 });
 
 router.delete("/students/:id", (req, res) => {
+  const viewer = requireSignedIn(req, res);
+  if (!viewer || viewer.role !== "principal") {
+    if (viewer) res.status(403).json({ error: "Only the principal can remove students" });
+    return;
+  }
   const parsed = DeleteStudentParams.safeParse(req.params);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });

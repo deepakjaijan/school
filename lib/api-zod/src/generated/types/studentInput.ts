@@ -15,4 +15,7 @@ export interface StudentInput {
   section: string;
   rollNumber: number;
   parentContact: string;
+  studentContact: string;
+  address: string;
+  email: string;
 }

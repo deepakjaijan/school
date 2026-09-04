@@ -38,6 +38,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Dashboard"
+  /profile:
+    get:
+      operationId: getProfile
+      tags: [school]
+      summary: Get the signed-in school profile
+      responses:
+        "200":
+          description: Signed-in profile and access role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "401": { description: Authentication required }
   /students:
     get:
       operationId: listStudents
@@ -223,7 +236,7 @@ components:
         tone: { type: string }
     Student:
       type: object
-      required: [id, name, admissionNumber, className, section, rollNumber, attendance, averageScore, achievementCount, parentContact]
+      required: [id, name, admissionNumber, className, section, rollNumber, attendance, averageScore, achievementCount, parentContact, studentContact, address, email]
       properties:
         id: { type: number }
         name: { type: string }
@@ -234,11 +247,14 @@ components:
         attendance: { type: number }
         averageScore: { type: number }
         achievementCount: { type: number }
-        parentContact: { type: string }
+        parentContact: { type: ["string", "null"] }
+        studentContact: { type: ["string", "null"] }
+        address: { type: ["string", "null"] }
+        email: { type: ["string", "null"] }
         avatar: { type: string }
     StudentInput:
       type: object
-      required: [name, admissionNumber, className, section, rollNumber, parentContact]
+      required: [name, admissionNumber, className, section, rollNumber, parentContact, studentContact, address, email]
       properties:
         name: { type: string, minLength: 1 }
         admissionNumber: { type: string, minLength: 1 }
@@ -246,6 +262,18 @@ components:
         section: { type: string }
         rollNumber: { type: number }
         parentContact: { type: string }
+        studentContact: { type: string }
+        address: { type: string }
+        email: { type: string }
+    Profile:
+      type: object
+      required: [id, name, email, role, studentId]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string }
+        studentId: { type: ["number", "null"] }
     Teacher:
       type: object
       required: [id, name, subject, specialization, email, phone, experience, initials, color]

@@ -36,6 +36,18 @@ export const GetDashboardResponse = zod.object({
 
 
 /**
+ * @summary Get the signed-in school profile
+ */
+export const GetProfileResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "role": zod.string(),
+  "studentId": zod.number().nullable()
+})
+
+
+/**
  * @summary List students
  */
 export const ListStudentsQueryParams = zod.object({
@@ -53,7 +65,10 @@ export const ListStudentsResponseItem = zod.object({
   "attendance": zod.number(),
   "averageScore": zod.number(),
   "achievementCount": zod.number(),
-  "parentContact": zod.string(),
+  "parentContact": zod.string().nullable(),
+  "studentContact": zod.string().nullable(),
+  "address": zod.string().nullable(),
+  "email": zod.string().nullable(),
   "avatar": zod.string().optional()
 })
 export const ListStudentsResponse = zod.array(ListStudentsResponseItem)
@@ -72,7 +87,10 @@ export const CreateStudentBody = zod.object({
   "className": zod.string(),
   "section": zod.string(),
   "rollNumber": zod.number(),
-  "parentContact": zod.string()
+  "parentContact": zod.string(),
+  "studentContact": zod.string(),
+  "address": zod.string(),
+  "email": zod.string()
 })
 
 export const CreateStudentResponse = zod.object({
@@ -85,7 +103,10 @@ export const CreateStudentResponse = zod.object({
   "attendance": zod.number(),
   "averageScore": zod.number(),
   "achievementCount": zod.number(),
-  "parentContact": zod.string(),
+  "parentContact": zod.string().nullable(),
+  "studentContact": zod.string().nullable(),
+  "address": zod.string().nullable(),
+  "email": zod.string().nullable(),
   "avatar": zod.string().optional()
 })
 
