@@ -101,6 +101,87 @@ paths:
       responses:
         "204": { description: Student removed }
         "404": { description: Student not found }
+  /classes:
+    get:
+      operationId: listClasses
+      tags: [school]
+      summary: List classes, sections, student totals, and homeroom teachers
+      responses:
+        "200":
+          description: Class register summary
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ClassSummary" }
+  /classes/{className}/{section}:
+    patch:
+      operationId: updateClassTeacher
+      tags: [school]
+      summary: Assign a homeroom teacher to a class section
+      parameters:
+        - name: className
+          in: path
+          required: true
+          schema: { type: string }
+        - name: section
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ClassTeacherInput" }
+      responses:
+        "200":
+          description: Updated class section
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClassSection" }
+  /attendance:
+    get:
+      operationId: listAttendance
+      tags: [school]
+      summary: Get attendance for a class section and date
+      parameters:
+        - name: className
+          in: query
+          required: true
+          schema: { type: string }
+        - name: section
+          in: query
+          required: true
+          schema: { type: string }
+        - name: date
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Attendance register
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AttendanceRecord" }
+    post:
+      operationId: recordAttendance
+      tags: [school]
+      summary: Save attendance for a class section
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AttendanceInput" }
+      responses:
+        "200":
+          description: Saved attendance register
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AttendanceRecord" }
   /teachers:
     get:
       operationId: listTeachers
@@ -274,6 +355,58 @@ components:
         email: { type: string }
         role: { type: string }
         studentId: { type: ["number", "null"] }
+    ClassSummary:
+      type: object
+      required: [className, totalStudents, sections]
+      properties:
+        className: { type: string }
+        totalStudents: { type: number }
+        sections:
+          type: array
+          items: { $ref: "#/components/schemas/ClassSection" }
+    ClassSection:
+      type: object
+      required: [className, section, studentCount, homeroomTeacherId, homeroomTeacherName, attendanceRate]
+      properties:
+        className: { type: string }
+        section: { type: string }
+        studentCount: { type: number }
+        homeroomTeacherId: { type: ["number", "null"] }
+        homeroomTeacherName: { type: ["string", "null"] }
+        attendanceRate: { type: number }
+    ClassTeacherInput:
+      type: object
+      required: [teacherId]
+      properties:
+        teacherId: { type: ["number", "null"] }
+    AttendanceRecord:
+      type: object
+      required: [studentId, studentName, className, section, rollNumber, date, status, remarks]
+      properties:
+        studentId: { type: number }
+        studentName: { type: string }
+        className: { type: string }
+        section: { type: string }
+        rollNumber: { type: number }
+        date: { type: string }
+        status: { type: string }
+        remarks: { type: string }
+    AttendanceInput:
+      type: object
+      required: [className, section, date, records]
+      properties:
+        className: { type: string }
+        section: { type: string }
+        date: { type: string }
+        records:
+          type: array
+          items:
+            type: object
+            required: [studentId, status]
+            properties:
+              studentId: { type: number }
+              status: { type: string }
+              remarks: { type: string }
     Teacher:
       type: object
       required: [id, name, subject, specialization, email, phone, experience, initials, color]

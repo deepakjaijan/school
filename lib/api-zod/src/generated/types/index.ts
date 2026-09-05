@@ -7,10 +7,17 @@
  */
 
 export * from './activity';
+export * from './attendanceInput';
+export * from './attendanceInputRecordsItem';
+export * from './attendanceRecord';
+export * from './classSection';
+export * from './classSummary';
+export * from './classTeacherInput';
 export * from './dashboard';
 export * from './eventInput';
 export * from './healthStatus';
 export * from './lecture';
+export * from './listAttendanceParams';
 export * from './listResourcesParams';
 export * from './listStudentsParams';
 export * from './notice';

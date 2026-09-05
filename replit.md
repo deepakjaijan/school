@@ -36,7 +36,7 @@ An admin-first school operations portal for Vikas Shiksha Sadan Senior Secondary
 
 ## Product
 
-The portal provides a dashboard, student records with Nursery–XII class filters and class totals, teacher contacts and specializations, academic resources and online lectures, a school calendar for holidays/occasions/sports, and a publishable notice board. Student accounts have protected self-service profiles; principal accounts can add/remove students and see private contacts.
+The portal provides a dashboard, student records with Nursery–XII class and section filters, class totals, homeroom-teacher assignments, and daily attendance registers. It also includes teacher contacts and specializations, academic resources and online lectures, a school calendar for holidays/occasions/sports, and a publishable notice board. Student accounts have protected self-service profiles; principals can add/remove students and see private contacts; assigned class teachers can take attendance for their sections.
 
 ## User preferences
 

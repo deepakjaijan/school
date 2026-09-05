@@ -122,6 +122,95 @@ export const DeleteStudentResponse = zod.void()
 
 
 /**
+ * @summary List classes, sections, student totals, and homeroom teachers
+ */
+export const ListClassesResponseItem = zod.object({
+  "className": zod.string(),
+  "totalStudents": zod.number(),
+  "sections": zod.array(zod.object({
+  "className": zod.string(),
+  "section": zod.string(),
+  "studentCount": zod.number(),
+  "homeroomTeacherId": zod.number().nullable(),
+  "homeroomTeacherName": zod.string().nullable(),
+  "attendanceRate": zod.number()
+}))
+})
+export const ListClassesResponse = zod.array(ListClassesResponseItem)
+
+
+/**
+ * @summary Assign a homeroom teacher to a class section
+ */
+export const UpdateClassTeacherParams = zod.object({
+  "className": zod.coerce.string(),
+  "section": zod.coerce.string()
+})
+
+export const UpdateClassTeacherBody = zod.object({
+  "teacherId": zod.number().nullable()
+})
+
+export const UpdateClassTeacherResponse = zod.object({
+  "className": zod.string(),
+  "section": zod.string(),
+  "studentCount": zod.number(),
+  "homeroomTeacherId": zod.number().nullable(),
+  "homeroomTeacherName": zod.string().nullable(),
+  "attendanceRate": zod.number()
+})
+
+
+/**
+ * @summary Get attendance for a class section and date
+ */
+export const ListAttendanceQueryParams = zod.object({
+  "className": zod.coerce.string(),
+  "section": zod.coerce.string(),
+  "date": zod.coerce.string()
+})
+
+export const ListAttendanceResponseItem = zod.object({
+  "studentId": zod.number(),
+  "studentName": zod.string(),
+  "className": zod.string(),
+  "section": zod.string(),
+  "rollNumber": zod.number(),
+  "date": zod.string(),
+  "status": zod.string(),
+  "remarks": zod.string()
+})
+export const ListAttendanceResponse = zod.array(ListAttendanceResponseItem)
+
+
+/**
+ * @summary Save attendance for a class section
+ */
+export const RecordAttendanceBody = zod.object({
+  "className": zod.string(),
+  "section": zod.string(),
+  "date": zod.string(),
+  "records": zod.array(zod.object({
+  "studentId": zod.number(),
+  "status": zod.string(),
+  "remarks": zod.string().optional()
+}))
+})
+
+export const RecordAttendanceResponseItem = zod.object({
+  "studentId": zod.number(),
+  "studentName": zod.string(),
+  "className": zod.string(),
+  "section": zod.string(),
+  "rollNumber": zod.number(),
+  "date": zod.string(),
+  "status": zod.string(),
+  "remarks": zod.string()
+})
+export const RecordAttendanceResponse = zod.array(RecordAttendanceResponseItem)
+
+
+/**
  * @summary List teachers
  */
 export const ListTeachersResponseItem = zod.object({

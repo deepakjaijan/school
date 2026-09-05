@@ -69,6 +69,52 @@ export interface Profile {
   studentId: number | null;
 }
 
+export interface ClassSection {
+  className: string;
+  section: string;
+  studentCount: number;
+  /** @nullable */
+  homeroomTeacherId: number | null;
+  /** @nullable */
+  homeroomTeacherName: string | null;
+  attendanceRate: number;
+}
+
+export interface ClassSummary {
+  className: string;
+  totalStudents: number;
+  sections: ClassSection[];
+}
+
+export interface ClassTeacherInput {
+  /** @nullable */
+  teacherId: number | null;
+}
+
+export interface AttendanceRecord {
+  studentId: number;
+  studentName: string;
+  className: string;
+  section: string;
+  rollNumber: number;
+  date: string;
+  status: string;
+  remarks: string;
+}
+
+export type AttendanceInputRecordsItem = {
+  studentId: number;
+  status: string;
+  remarks?: string;
+};
+
+export interface AttendanceInput {
+  className: string;
+  section: string;
+  date: string;
+  records: AttendanceInputRecordsItem[];
+}
+
 export interface Teacher {
   id: number;
   name: string;
@@ -144,6 +190,12 @@ export interface Lecture {
 export type ListStudentsParams = {
 search?: string;
 className?: string;
+};
+
+export type ListAttendanceParams = {
+className: string;
+section: string;
+date: string;
 };
 
 export type ListResourcesParams = {

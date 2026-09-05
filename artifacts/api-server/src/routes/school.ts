@@ -4,6 +4,13 @@ import {
   CreateEventBody,
   CreateNoticeBody,
   CreateStudentBody,
+  ListAttendanceQueryParams,
+  ListClassesResponse,
+  ListAttendanceResponse,
+  RecordAttendanceBody,
+  RecordAttendanceResponse,
+  UpdateClassTeacherBody,
+  UpdateClassTeacherParams,
   DeleteStudentParams,
   GetDashboardResponse,
   ListEventsResponse,
@@ -34,8 +41,9 @@ type Student = {
 };
 
 type Viewer = {
-  role: "principal" | "student";
+  role: "principal" | "teacher" | "student";
   studentId: number | null;
+  teacherId: number | null;
   id: string;
   name: string;
   email: string;
@@ -58,6 +66,21 @@ type SchoolEvent = {
   type: string;
   description: string;
   color: string;
+};
+
+type AttendanceStatus = "present" | "absent" | "late" | "excused" | "unmarked";
+type ClassSection = {
+  className: string;
+  section: string;
+  teacherId: number | null;
+};
+type AttendanceEntry = {
+  studentId: number;
+  className: string;
+  section: string;
+  date: string;
+  status: AttendanceStatus;
+  remarks: string;
 };
 
 const students: Student[] = [
@@ -190,6 +213,52 @@ const teachers = [
   },
 ];
 
+const schoolClassOptions = ["Nursery", "LKG", "UKG", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
+const classSections: ClassSection[] = schoolClassOptions.flatMap((className, index) =>
+  ["A", "B", "C", "D"].map((section, sectionIndex) => ({
+    className,
+    section,
+    teacherId: ((index + sectionIndex) % teachers.length) + 1,
+  })),
+);
+
+students.push(
+  ...schoolClassOptions.flatMap((className, classIndex) =>
+    ["A", "B"].flatMap((section, sectionIndex) =>
+      Array.from({ length: 2 }, (_, studentIndex) => {
+        const id = 100 + classIndex * 4 + sectionIndex * 2 + studentIndex;
+        const name = `${["Aarohi", "Vihaan", "Myra", "Advik"][studentIndex]} ${className === "Nursery" || className === "LKG" || className === "UKG" ? "Saini" : "Kumar"}`;
+        return {
+          id,
+          name,
+          admissionNumber: `VSS-${2026}-${String(id).padStart(3, "0")}`,
+          className,
+          section,
+          rollNumber: studentIndex + 1,
+          attendance: 90 + ((id + classIndex) % 10),
+          averageScore: 70 + ((id + classIndex) % 25),
+          achievementCount: (id + classIndex) % 4,
+          parentContact: "+91 98000 12000",
+          studentContact: "+91 98000 22000",
+          address: "Rohtak, Haryana",
+          email: `student${id}@student.vikasshiksha.edu.in`,
+          avatar: name.split(" ").map((part) => part[0]).join(""),
+        };
+      }),
+    ),
+  ),
+);
+
+const currentDate = () => new Date().toISOString().slice(0, 10);
+const attendanceEntries: AttendanceEntry[] = students.map((student) => ({
+  studentId: student.id,
+  className: student.className,
+  section: student.section,
+  date: currentDate(),
+  status: student.id % 7 === 0 ? "late" : student.id % 11 === 0 ? "absent" : "present",
+  remarks: "",
+}));
+
 const resources = [
   { id: 1, title: "CBSE Mathematics — Board Exam Set", kind: "PYQ", subject: "Mathematics", className: "XII", year: 2024, pages: 18, downloads: 128 },
   { id: 2, title: "Physics Previous Year Questions", kind: "PYQ", subject: "Physics", className: "XII", year: 2023, pages: 24, downloads: 96 },
@@ -226,8 +295,8 @@ function getViewer(req: Request): Viewer {
         sub?: string;
         email?: string;
         name?: string;
-        publicMetadata?: { role?: string; studentId?: number };
-        metadata?: { role?: string; studentId?: number };
+        publicMetadata?: { role?: string; studentId?: number; teacherId?: number };
+        metadata?: { role?: string; studentId?: number; teacherId?: number };
       }
     | undefined;
   const role =
@@ -235,10 +304,13 @@ function getViewer(req: Request): Viewer {
     claims?.metadata?.role === "principal" ||
     claims?.email?.endsWith("@vikasshiksha.edu.in")
       ? "principal"
+      : claims?.publicMetadata?.role === "teacher" || claims?.metadata?.role === "teacher"
+        ? "teacher"
       : "student";
   return {
     role,
     studentId: role === "student" ? claims?.publicMetadata?.studentId ?? 1 : null,
+    teacherId: role === "teacher" ? claims?.publicMetadata?.teacherId ?? claims?.metadata?.teacherId ?? 1 : null,
     id: claims?.sub ?? "signed-in-user",
     name: claims?.name ?? (role === "principal" ? "School Principal" : "Student"),
     email: claims?.email ?? "account@vikasshiksha.edu.in",
@@ -263,6 +335,48 @@ function visibleStudent(student: Student, viewer: Viewer): Student {
     address: null,
     email: null,
   };
+}
+
+function findClassSection(className: string, section: string) {
+  return classSections.find((item) => item.className === className && item.section === section);
+}
+
+function canManageClass(viewer: Viewer, className: string, section: string) {
+  if (viewer.role === "principal") return true;
+  const assignment = findClassSection(className, section);
+  return viewer.role === "teacher" && assignment?.teacherId === viewer.teacherId;
+}
+
+function classSectionResponse(section: ClassSection) {
+  const roster = students.filter((student) => student.className === section.className && student.section === section.section);
+  const teacher = teachers.find((item) => item.id === section.teacherId);
+  return {
+    className: section.className,
+    section: section.section,
+    studentCount: roster.length,
+    homeroomTeacherId: section.teacherId,
+    homeroomTeacherName: teacher?.name ?? null,
+    attendanceRate: roster.length ? Math.round((roster.reduce((sum, student) => sum + student.attendance, 0) / roster.length) * 10) / 10 : 0,
+  };
+}
+
+function attendanceResponse(className: string, section: string, date: string) {
+  return students
+    .filter((student) => student.className === className && student.section === section)
+    .sort((a, b) => a.rollNumber - b.rollNumber)
+    .map((student) => {
+      const record = attendanceEntries.find((entry) => entry.studentId === student.id && entry.date === date);
+      return {
+        studentId: student.id,
+        studentName: student.name,
+        className: student.className,
+        section: student.section,
+        rollNumber: student.rollNumber,
+        date,
+        status: record?.status ?? "unmarked",
+        remarks: record?.remarks ?? "",
+      };
+    });
 }
 
 router.get("/profile", (req, res) => {
@@ -356,6 +470,91 @@ router.delete("/students/:id", (req, res) => {
   }
   students.splice(index, 1);
   res.sendStatus(204);
+});
+
+router.get("/classes", (req, res) => {
+  const viewer = requireSignedIn(req, res);
+  if (!viewer) return;
+  const sections = viewer.role === "teacher"
+    ? classSections.filter((section) => section.teacherId === viewer.teacherId)
+    : classSections;
+  const result = schoolClassOptions.map((className) => {
+    const classSectionsForClass = sections.filter((section) => section.className === className).map(classSectionResponse);
+    return {
+      className,
+      totalStudents: classSectionsForClass.reduce((sum, section) => sum + section.studentCount, 0),
+      sections: classSectionsForClass,
+    };
+  }).filter((item) => viewer.role !== "teacher" || item.sections.length > 0);
+  res.json(ListClassesResponse.parse(result));
+});
+
+router.patch("/classes/:className/:section", (req, res) => {
+  const viewer = requireSignedIn(req, res);
+  if (!viewer || viewer.role !== "principal") {
+    if (viewer) res.status(403).json({ error: "Only the principal can assign homeroom teachers" });
+    return;
+  }
+  const params = UpdateClassTeacherParams.safeParse(req.params);
+  const body = UpdateClassTeacherBody.safeParse(req.body);
+  if (!params.success || !body.success) {
+    res.status(400).json({ error: "Invalid class or teacher assignment" });
+    return;
+  }
+  const section = findClassSection(params.data.className, params.data.section);
+  if (!section) {
+    res.status(404).json({ error: "Class section not found" });
+    return;
+  }
+  if (body.data.teacherId !== null && !teachers.some((teacher) => teacher.id === body.data.teacherId)) {
+    res.status(400).json({ error: "Teacher not found" });
+    return;
+  }
+  section.teacherId = body.data.teacherId;
+  res.json(classSectionResponse(section));
+});
+
+router.get("/attendance", (req, res) => {
+  const viewer = requireSignedIn(req, res);
+  if (!viewer) return;
+  const parsed = ListAttendanceQueryParams.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  if (!canManageClass(viewer, parsed.data.className, parsed.data.section)) {
+    res.status(403).json({ error: "Only the assigned class teacher or principal can take attendance" });
+    return;
+  }
+  res.json(ListAttendanceResponse.parse(attendanceResponse(parsed.data.className, parsed.data.section, parsed.data.date)));
+});
+
+router.post("/attendance", (req, res) => {
+  const viewer = requireSignedIn(req, res);
+  if (!viewer) return;
+  const parsed = RecordAttendanceBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const { className, section, date, records } = parsed.data;
+  if (!canManageClass(viewer, className, section)) {
+    res.status(403).json({ error: "Only the assigned class teacher or principal can take attendance" });
+    return;
+  }
+  const rosterIds = new Set(students.filter((student) => student.className === className && student.section === section).map((student) => student.id));
+  const allowedStatuses = new Set<AttendanceStatus>(["present", "absent", "late", "excused"]);
+  for (const record of records) {
+    if (!rosterIds.has(record.studentId) || !allowedStatuses.has(record.status as AttendanceStatus)) continue;
+    const existing = attendanceEntries.find((entry) => entry.studentId === record.studentId && entry.date === date);
+    if (existing) {
+      existing.status = record.status as AttendanceStatus;
+      existing.remarks = record.remarks ?? "";
+    } else {
+      attendanceEntries.push({ studentId: record.studentId, className, section, date, status: record.status as AttendanceStatus, remarks: record.remarks ?? "" });
+    }
+  }
+  res.json(RecordAttendanceResponse.parse(attendanceResponse(className, section, date)));
 });
 
 router.get("/teachers", (_req, res) => res.json(ListTeachersResponse.parse(teachers)));
