@@ -32,6 +32,12 @@ const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 const classOptions = ['Nursery', 'LKG', 'UKG', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+const signInRoles = [
+  { value: 'student', label: 'Student', detail: 'View your own profile, academics and notices.', icon: Users },
+  { value: 'teacher', label: 'Teacher', detail: 'Open assigned classes and take attendance.', icon: GraduationCap },
+  { value: 'principal', label: 'Principal', detail: 'Manage all classes, students and attendance.', icon: ClipboardList },
+] as const;
+type SignInRole = (typeof signInRoles)[number]['value'];
 
 function stripBase(path: string) {
   return basePath && path.startsWith(basePath) ? path.slice(basePath.length) || '/' : path;
@@ -445,7 +451,10 @@ function Landing() {
 }
 
 function SignInPage() {
-  return <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} /></div>;
+  const queryRole = new URLSearchParams(window.location.search).get('role') as SignInRole | null;
+  const [role, setRole] = useState<SignInRole>(signInRoles.some((item) => item.value === queryRole) ? queryRole! : 'student');
+  const selectedRole = signInRoles.find((item) => item.value === role) ?? signInRoles[0];
+  return <div className="grain min-h-[100dvh] bg-background px-4 py-8 sm:py-12"><div className="mx-auto grid w-full max-w-5xl items-start gap-8 lg:grid-cols-[.78fr_1fr]"><div className="pt-4 lg:pt-12"><Link href="/" className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-primary">← Back to school portal</Link><p className="mt-12 font-mono text-[10px] uppercase tracking-[.2em] text-primary">Protected school access</p><h1 className="mt-3 font-serif text-4xl leading-tight sm:text-5xl">Choose your school role.</h1><p className="mt-4 max-w-md text-sm leading-6 text-muted-foreground">Use the account provided for you by Vikas Shiksha Sadan. Your selected role helps you understand the access you are requesting.</p><div className="mt-8 space-y-3">{signInRoles.map(({ value, label, detail, icon: Icon }) => <button key={value} data-testid={`button-sign-in-role-${value}`} onClick={() => setRole(value)} className={classNames('flex w-full items-start gap-3 rounded-2xl border p-4 text-left transition', role === value ? 'border-primary bg-primary/5 shadow-[0_5px_0_hsl(var(--primary)/.08)]' : 'border-card-border bg-card hover:border-primary/30')}><span className={classNames('rounded-xl p-2.5', role === value ? 'bg-primary text-primary-foreground' : 'bg-secondary text-primary')}><Icon size={18} /></span><span><span className="block text-sm font-semibold">{label}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{detail}</span></span></button>)}</div><div className="mt-6 rounded-2xl border border-accent/30 bg-accent/10 p-4 text-xs leading-5 text-[hsl(27_65%_30%)]"><strong>Important:</strong> Role permissions are assigned by the school office. Selecting Principal or Teacher here does not grant that access by itself.</div></div><div className="rounded-[1.7rem] border border-card-border bg-card p-4 shadow-xl sm:p-8"><div className="mb-5 rounded-xl bg-secondary/60 px-4 py-3"><p className="font-mono text-[10px] uppercase tracking-[.16em] text-primary">Signing in as</p><p className="mt-1 font-serif text-xl">{selectedRole.label}</p></div><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} /></div></div></div>;
 }
 
 function SignUpPage() {
